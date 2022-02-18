@@ -1,0 +1,5 @@
+set age two \r\n
+set name jeffery \r\n
+get name \r\n
+get age \r\n
+:q \r\n

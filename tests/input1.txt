@@ -1,0 +1,3 @@
+set name jeffery coulter \r\n
+set city bloomington \r\n
+:q \r\n
