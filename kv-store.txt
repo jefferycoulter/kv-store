@@ -1,2 +1,3 @@
-name: jeffery
-age: two 
+age: (3 bytes) 
+state: (7 bytes) indiana
+name: (15 bytes) jeffery coulter

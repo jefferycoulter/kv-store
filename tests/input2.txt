@@ -1,5 +1,6 @@
-set age two \r\n
-set name jeffery \r\n
+set age 3 two \r\n
+set name 7 jeffery \r\n
 get name \r\n
 get age \r\n
+get state \r\n
 :q \r\n

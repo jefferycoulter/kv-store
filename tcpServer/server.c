@@ -15,6 +15,8 @@
 #include "utils.h"
 //#include "commands.h"
 
+#define BUFFER_SIZE 1024
+
 int main(int argc, char** argv)
 {
     /* check that arguments passed are appropriate */
@@ -22,7 +24,7 @@ int main(int argc, char** argv)
 
     /* initialize socket attributes */
     int sockfd, newsockfd, portno;
-    char buffer[256]; /* for messages */
+    char buffer[BUFFER_SIZE]; /* for messages */
 
     struct sockaddr_in serv_addr, cli_addr;
     socklen_t cli_len;
@@ -68,30 +70,32 @@ int main(int argc, char** argv)
 
         if ((pid = fork()) == 0) /* process for new client */
         {
-            close(sockfd);
-
+            //close(sockfd);
             while(1) /* loop for as long as the client is connected */
             {
-                bzero(buffer, 256);
-                recv(newsockfd, buffer, 256, 0);
-                if (strncmp(":q", buffer, 2) == 0)
-                { /* the client is done */
-                    bzero(buffer, sizeof(buffer));
-                    strcpy(buffer, "Good bye\r\n");
-                    send(newsockfd, buffer, strlen(buffer), 0);
-                    printf("client %s:%d disconnected\n", inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port));
-                    break;
-                }
+                bzero(buffer, BUFFER_SIZE);
+                recv(newsockfd, buffer, BUFFER_SIZE, 0);
 
-                else if (strncmp("set", buffer, 3) == 0)
+                
+                
+                if (strncmp("set", buffer, 3) == 0)
                 { /* the client wants to set a value */
-                    char cmd[20] = { 0 }; // store set command
+
+                    char cmd[3] = { 0 }; // store set command
+                    char size[8] = { 0 }; // size of data to be stored
                     char key[20] = { 0 }; // store key
                     char val[20] = { 0 }; // store value
+                    
                     bool replace = false;
 
                     /* get the key-value pair */
-                    sscanf(buffer, "%s %s %[a-zA-Z ]", cmd, key, val);
+                    //sscanf(buffer, "%s %s %s %[a-zA-Z ]", cmd, key, size, val);
+                    sscanf(buffer, "%s %s %s", cmd, key, size);
+                    bzero(buffer, BUFFER_SIZE);
+
+                    bzero(buffer, BUFFER_SIZE);
+                    recv(newsockfd, buffer, BUFFER_SIZE, 0);
+                    sscanf(buffer, "%[a-zA-Z ]", val);
 
                     /* open old file */
                     FILE *f = fopen("kv-store.txt", "r");
@@ -107,6 +111,9 @@ int main(int argc, char** argv)
                     char new_line[1024]; /* line that will be added to file */
                     strcpy(new_line, key);
                     strcat(new_line, ": ");
+                    strcat(new_line, "(");
+                    strcat(new_line, size);
+                    strcat(new_line, " bytes) ");
                     strcat(new_line, val);
                     
                     /* check if the key is a new key or already exists */
@@ -129,7 +136,7 @@ int main(int argc, char** argv)
                     rewind(f);
 
                     if (replace==true)
-                    { /* the key-value pair is new, so create a new item */
+                    { /* the key-value pair exists, so replace the old value */
                         int another_line_count = 0; /* when this equals line_count, replace the old value with the new one */
                         while ((fgets(line, sizeof(line), f)) != NULL)
                         {
@@ -171,9 +178,9 @@ int main(int argc, char** argv)
 
                 else if (strncmp("get", buffer, 3) == 0)
                 { /* the client wants to get a value */
-                    char cmd[20] = { 0 }; // store set command
+                    char cmd[3] = { 0 }; // store set command
                     char key[20] = { 0 }; // store key
-                    char val[20] = { 0 }; // store value
+                    char val[40] = { 0 }; // store value
 
                     sscanf(buffer, "%s %s", cmd, key);
 
@@ -213,6 +220,14 @@ int main(int argc, char** argv)
 
                 } /* END the client wants to get a value */
 
+                else if (strncmp(":q", buffer, 2) == 0)
+                { /* the client is done */
+                    bzero(buffer, sizeof(buffer));
+                    strcpy(buffer, "Good bye\r\n");
+                    send(newsockfd, buffer, strlen(buffer), 0);
+                    printf("client %s:%d disconnected\n", inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port));
+                    break;
+                }
                 else
                 { /* the client needs to specify a command */
                     strcpy(buffer, "need to specify either a 'get' or a 'set' command\n usage:\n\t get [<key>]\n\t set [<key>] [<value size>] [<value>]\n");
@@ -226,7 +241,7 @@ int main(int argc, char** argv)
     } /* END loop for as long as the server is accepting clients */
 
     close(newsockfd);
-    //close(sockfd);
+    close(sockfd);
 
     return 0;
 }

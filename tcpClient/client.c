@@ -19,7 +19,7 @@ int main(int argc, char** argv)
     if ((argc < 3) || argc > 4) { KillErrorUser("usage error:", "./client [<host IP>] [<port number>] [<input file>]\n"); }
 
     /* initialize socket attributes */
-    int sockfd, portno, n;
+    int sockfd, portno;
     struct sockaddr_in serv_addr;
     struct hostent *server;
 
@@ -56,18 +56,12 @@ int main(int argc, char** argv)
         if (f==NULL) { KillErrorSyst("server failed to open file"); }
         char line[1024]; /* line of old file */
         
-        /* check if the key is a new key or already exists */
         while ((fgets(line, sizeof(line), f)) != NULL)
         {
             //printf("line %s\n", line);
             bzero(buffer, 256);
             strcpy(buffer, line);
             send(sockfd, buffer, strlen(buffer), 0);
-            
-            bzero(buffer, 256);
-            fputs("server: ", stdout);
-            recv(sockfd, buffer, 256, 0);
-            fputs(buffer, stdout);
         }
 
         fclose(f);
@@ -79,12 +73,17 @@ int main(int argc, char** argv)
             /* no input file provided */
             bzero(buffer, 256);
             fgets(buffer, 256, stdin);
-            n = write(sockfd, buffer, strlen(buffer));
-            if (n < 0) { KillErrorSyst("error on writing.\n"); }
+            if (send(sockfd, buffer, strlen(buffer), 0) < 0) { KillErrorSyst("error on send.\n"); }
+            
+            if (strncmp("set", buffer, 3) == 0)
+            {
+                bzero(buffer, 256);
+                fgets(buffer, 256, stdin);
+                if (send(sockfd, buffer, strlen(buffer), 0) < 0) { KillErrorSyst("error on send.\n"); }
+            }
 
             bzero(buffer, 256);
-            n = read(sockfd, buffer, 256); /* strlen(buffer) is zero at this point so set size to 256 */
-            if (n < 0) { KillErrorSyst("error on reading.\n"); }
+            if (recv(sockfd, buffer, 256, 0) < 0) { KillErrorSyst("error on receive.\n"); }
             printf("server: %s\n", buffer);
 
             /* when server says bye, leave the loop */

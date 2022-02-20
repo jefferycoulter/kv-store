@@ -1,3 +1,9 @@
-set name jeffery coulter \r\n
-set city bloomington \r\n
+set name 15 \r\n
+jeffery coulter \r\n
+set state 7 \r\n
+indiana \r\n
+get name \r\n
+get age \r\n
+get state \r\n
 :q \r\n
+
